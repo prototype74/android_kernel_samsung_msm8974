@@ -40,8 +40,6 @@
 #include <sdp/fs_request.h>
 #include "ecryptfs_sdp_chamber.h"
 #include "ecryptfs_dek.h"
-
-#include "../sdcardfs/sdcardfs.h"
 #endif
 
 #ifdef CONFIG_DLP
@@ -76,7 +74,6 @@ void ecryptfs_revert_fsids(const struct cred * old_cred)
 	put_cred(cur_cred); 
 }
 
-#ifndef CONFIG_SDP
 static struct dentry *lock_parent(struct dentry *dentry)
 {
 	struct dentry *dir;
@@ -91,7 +88,6 @@ static void unlock_dir(struct dentry *dir)
 	mutex_unlock(&dir->d_inode->i_mutex);
 	dput(dir);
 }
-#endif
 
 static int ecryptfs_inode_test(struct inode *inode, void *lower_inode)
 {
@@ -727,34 +723,9 @@ static struct dentry *ecryptfs_lookup(struct inode *ecryptfs_dir_inode,
 	}
 	mutex_lock(&lower_dir_dentry->d_inode->i_mutex);
 
-#ifdef CONFIG_SDP
-	if(!strncmp(lower_dir_dentry->d_sb->s_type->name, "sdcardfs", 8)) {
-		struct sdcardfs_dentry_info *dinfo = SDCARDFS_D(lower_dir_dentry);
-		int len = strlen(ecryptfs_dentry->d_name.name);
-		int i, numeric = 1;
-
-		dinfo->under_knox = 1;
-		dinfo->userid = -1;
-		if(IS_UNDER_ROOT(ecryptfs_dentry)) {
-			for(i=0 ; i < len ; i++)
-				if(!isdigit(ecryptfs_dentry->d_name.name[i])) { numeric = 0; break; }
-			if(numeric) {
-				dinfo->userid = simple_strtoul(ecryptfs_dentry->d_name.name, NULL, 10);
-			}
-		}
-	}
-#endif
-
 	lower_dentry = lookup_one_len(encrypted_and_encoded_name,
 				      lower_dir_dentry,
 				      encrypted_and_encoded_name_size);
-#ifdef CONFIG_SDP
-	if(!strncmp(lower_dir_dentry->d_sb->s_type->name, "sdcardfs", 8)) {
-		struct sdcardfs_dentry_info *dinfo = SDCARDFS_D(lower_dir_dentry);
-		dinfo->under_knox = 0;
-		dinfo->userid = -1;
-	}
-#endif
 	mutex_unlock(&lower_dir_dentry->d_inode->i_mutex);
 	if (IS_ERR(lower_dentry)) {
 		rc = PTR_ERR(lower_dentry);
@@ -862,23 +833,6 @@ static int ecryptfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode
 	lower_dentry = ecryptfs_dentry_to_lower(dentry);
 	lower_dir_dentry = lock_parent(lower_dentry);
 
-#ifdef CONFIG_SDP
-	if(!strncmp(lower_dir_dentry->d_sb->s_type->name, "sdcardfs", 8)) {
-		struct sdcardfs_dentry_info *dinfo = SDCARDFS_D(lower_dir_dentry);
-		int len = strlen(dentry->d_name.name);
-		int i, numeric = 1;
-
-		dinfo->under_knox = 1;
-		dinfo->userid = -1;
-		if(IS_UNDER_ROOT(dentry)) {
-			for(i=0 ; i < len ; i++)
-				if(!isdigit(dentry->d_name.name[i])) { numeric = 0; break; }
-			if(numeric) {
-				dinfo->userid = simple_strtoul(dentry->d_name.name, NULL, 10);
-			}
-		}
-	}
-#endif
 	rc = vfs_mkdir(lower_dir_dentry->d_inode, lower_dentry, mode);
 	if (rc || !lower_dentry->d_inode)
 		goto out;
@@ -889,13 +843,6 @@ static int ecryptfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode
 	fsstack_copy_inode_size(dir, lower_dir_dentry->d_inode);
 	set_nlink(dir, lower_dir_dentry->d_inode->i_nlink);
 out:
-#ifdef CONFIG_SDP
-	if(!strncmp(lower_dir_dentry->d_sb->s_type->name, "sdcardfs", 8)) {
-		struct sdcardfs_dentry_info *dinfo = SDCARDFS_D(lower_dir_dentry);
-		dinfo->under_knox = 0;
-		dinfo->userid = -1;
-	}
-#endif
 	unlock_dir(lower_dir_dentry);
 	if (!dentry->d_inode)
 		d_drop(dentry);
