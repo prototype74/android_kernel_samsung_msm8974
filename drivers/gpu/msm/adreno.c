@@ -629,7 +629,7 @@ int adreno_perfcounter_query_group(struct adreno_device *adreno_dev,
 		return 0;
 	}
 
-	t = min_t(unsigned int, group->reg_count, count);
+	t = min_t(int, group->reg_count, count);
 
 	buf = kmalloc(t * sizeof(unsigned int), GFP_KERNEL);
 	if (buf == NULL) {
@@ -2125,6 +2125,7 @@ error_clk_off:
  *
  * Power up the GPU and initialize it.  If priority is specified then elevate
  * the thread priority for the duration of the start operation
+
  */
 static int adreno_start(struct kgsl_device *device, int priority)
 {

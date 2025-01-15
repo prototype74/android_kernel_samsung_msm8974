@@ -339,7 +339,6 @@ kgsl_mem_entry_track_gpuaddr(struct kgsl_process_private *process,
 			ret = -EINVAL;
 			goto done;
 		}
-
 		ret = kgsl_mmu_get_gpuaddr(process->pagetable, &entry->memdesc);
 	}
 
@@ -367,7 +366,7 @@ kgsl_mem_entry_untrack_gpuaddr(struct kgsl_process_private *process,
 }
 
 static void kgsl_mem_entry_commit_mem_list(struct kgsl_process_private *process,
-				struct kgsl_mem_entry *entry)
+		struct kgsl_mem_entry *entry)
 {
 	struct rb_node **node;
 	struct rb_node *parent = NULL;
@@ -394,7 +393,7 @@ static void kgsl_mem_entry_commit_mem_list(struct kgsl_process_private *process,
 }
 
 static void kgsl_mem_entry_commit_process(struct kgsl_process_private *process,
-				struct kgsl_mem_entry *entry)
+		struct kgsl_mem_entry *entry)
 {
 	if (!entry)
 		return;
@@ -1613,7 +1612,7 @@ void kgsl_dump_syncpoints(struct kgsl_device *device,
 		}
 		case KGSL_CMD_SYNCPOINT_TYPE_FENCE:
 			if (event->handle)
-				dev_err(device->dev, "  fence: [%pK] %s\n",
+				dev_err(device->dev, "  fence: [%p] %s\n",
 					event->handle->fence,
 					event->handle->name);
 			else
@@ -4139,6 +4138,18 @@ static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 
 	vma->vm_private_data = entry;
 
+#ifdef CONFIG_TIMA_RKP
+	if (vma->vm_end - vma->vm_start) {
+		/* iommu optimization- needs to be turned ON from
+		* the tz side.
+		*/
+		cpu_v7_tima_iommu_opt(vma->vm_start, vma->vm_end, (unsigned long)vma->vm_mm->pgd);
+		__asm__ __volatile__ (
+		"mcr    p15, 0, r0, c8, c3, 0\n"
+		"dsb\n"
+		"isb\n");
+	}
+#endif
 	/* Determine user-side caching policy */
 
 	cache = kgsl_memdesc_get_cachemode(&entry->memdesc);
