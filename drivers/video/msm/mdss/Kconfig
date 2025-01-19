@@ -88,6 +88,15 @@ config MDNIE_LITE_TUNING
 	bool "MDNIe lite panel tuning"
 	default n
 
+config MDNIE_LITE_TUNING_NIGHT_MODE
+	depends on MDNIE_LITE_TUNING
+	bool "Support Blue Light Filter"
+	default n
+	---help---
+	  Extend the MDNIE features with Samsung's Blue Light Filter
+	  also called night_mode. A DSI panel requires proper configs
+	  and data to use this feature.
+
 config MDNIE_ENHENCED_LOCAL_CE
 	bool "MDNIe lite panel tuning for enhenced local ce"
 	default n
