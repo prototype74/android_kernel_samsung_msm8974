@@ -122,7 +122,7 @@
 			cypress,sda-gpio = <&msmgpio 95 0x00>;
 			cypress,irq-gpio = <&pm8941_gpios 29 0x1>;
 			cypress,touchkey_id-gpio = <&msmgpio 101 0x00>;			
-			cypress,tkey-keycodes = <139 158>;
+			cypress,tkey-keycodes = <254 158>;
 			cypress,i2c-pull-up = <1>;
 		};
 	};
